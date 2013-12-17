@@ -19,6 +19,56 @@ function newQuads(s, n, img)
 	return q
 end
 
+function collision(a, b, axis)
+	if a.x >= b.x + b.w
+	or a.y >= b.y + b.h
+	or a.x + a.w <= b.x
+	or a.y + a.h <= b.y then
+		return 0, 0
+	end
+
+	local dx = b.x + b.w - a.x
+	local dx2 = b.x - a.x - a.w
+	if -dx2 < dx then dx = dx2 end
+
+	local dy = b.y + b.h - a.y
+	local dy2 = b.y - a.y - a.h
+	if -dy2 < dy then dy = dy2 end
+
+	if axis == "x" then
+		return dx, 0
+	elseif axis == "y" then
+		return 0, dy
+	else
+		if math.abs(dx) < math.abs(dy) then
+			return dx, 0
+		else
+			return 0, dy
+		end
+	end
+end
+
+
+
+-- map
+solids = {
+	{
+		x = 0,
+		y = 470,
+		w = 800,
+		h = 200,
+	}, {
+		x = 200,
+		y = 200,
+		w = 200,
+		h = 150,
+	}, {
+		x = 550,
+		y = 300,
+		w = 100,
+		h = 100,
+	}
+}
 
 
 
@@ -26,7 +76,7 @@ Cat = Object:new()
 function Cat:staticInit()
 
 	local img = G.newImage("data/cat.png")
-	self.quads = newQuads(100, 4, img)
+	self.quads = newQuads(96, 4, img)
 
 	self.anims = {
 		idle	= { speed=0.04, 1, 2 },
@@ -37,29 +87,51 @@ function Cat:staticInit()
 end
 function Cat:init()
 	self.x = 200
-	self.y = 0
+	self.y = 500
 	self.dy = 0
 	self.dir = 1
 
 	self.frame = 0
 	self.anim = self.anims["idle"]
 end
+
 function Cat:update()
 
 	local dir = bool[isDown "right"] - bool[isDown "left"]
-	self.x = self.x + 4 * dir
+	self.x = self.x + dir * 5
 
-
+	--self.dy = bool[isDown "down"] - bool[isDown "up"]
 	self.dy = self.dy + 0.5
 	self.y = self.y + self.dy
 
 	local inAir = true
 
-	if self.y > 400 then
-		inAir = false
-		self.y = 400
-		self.dy = 0
+	-- collision
+	local box = {
+		x = self.x - 48,
+		y = self.y - 12,
+		w = 96, h = 12 + 48
+	}
+	self.box = box -- debug
 
+
+	for _, s in ipairs(solids) do
+		local ox, oy = collision(box, s)
+		self.x = self.x + ox
+		self.y = self.y + oy
+
+
+		if oy < 0 and self.dy > 0 then -- hit floor
+			self.dy = 0
+			inAir = false
+		end
+
+		if oy > 0 and self.dy < 0 then -- ceiling cat :)
+			self.dy = 0
+		end
+	end
+
+	if not inAir then
 		-- jump
 		if isDown " " then
 			self.dy = -14
@@ -87,13 +159,14 @@ function Cat:update()
 
 end
 function Cat:draw()
-	G.setColor(70, 70, 30)
---	G.rectangle("line", self.x-20, self.y-20, 40, 40)
-	G.rectangle("fill", 0, 450, 800, 200)
+	G.setColor(255, 0, 0)
+	G.rectangle("line", self.box.x, self.box.y, self.box.w, self.box.h)
 
 
 	G.setColor(255, 255, 255)
 	local i = math.floor(self.frame % #self.anim) + 1
+
+
 	G.draw(self.quads[self.anim[i]], self.x, self.y, 0, self.dir, 1)
 end
 
@@ -127,4 +200,13 @@ function love.draw()
 
 
 	player:draw()
+
+
+	for _, s in ipairs(solids) do
+		G.setColor(30, 20, 0)
+		G.rectangle("line", s.x, s.y, s.w, s.h)
+		G.setColor(70, 50, 20)
+		G.rectangle("fill", s.x, s.y, s.w, s.h)
+	end
+
 end
