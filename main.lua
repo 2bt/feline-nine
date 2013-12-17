@@ -29,17 +29,17 @@ function collision(a, b, axis)
 
 	local dx = b.x + b.w - a.x
 	local dx2 = b.x - a.x - a.w
-	if -dx2 < dx then dx = dx2 end
 
 	local dy = b.y + b.h - a.y
 	local dy2 = b.y - a.y - a.h
-	if -dy2 < dy then dy = dy2 end
 
 	if axis == "x" then
-		return dx, 0
+		return dx, dx2
 	elseif axis == "y" then
-		return 0, dy
+		return dy, dy2
 	else
+		if -dx2 < dx then dx = dx2 end
+		if -dy2 < dy then dy = dy2 end
 		if math.abs(dx) < math.abs(dy) then
 			return dx, 0
 		else
@@ -82,64 +82,108 @@ function Cat:staticInit()
 		idle	= { speed=0.04, 1, 2 },
 		run		= { speed=0.10, 5, 6 },
 		jump	= { speed=0.00, 7, 12, 8 },
+		hang	= { speed=0.00, 9, 10, 11, 12 },
 	}
 
 end
 function Cat:init()
 	self.x = 200
 	self.y = 500
+
 	self.dy = 0
 	self.dir = 1
 
+	self.state = "air"
+	self.anim = self.anims["jump"]
 	self.frame = 0
-	self.anim = self.anims["idle"]
 end
 
 function Cat:update()
 
-	local dir = bool[isDown "right"] - bool[isDown "left"]
-	self.x = self.x + dir * 5
+	local dir = 0
+	if self.state == "ground"
+	or self.state == "air" then
 
-	--self.dy = bool[isDown "down"] - bool[isDown "up"]
-	self.dy = self.dy + 0.5
-	self.y = self.y + self.dy
+		dir = bool[isDown "right"] - bool[isDown "left"]
+		if dir ~= 0 then self.dir = dir end
+		self.x = self.x + dir * 5
 
-	local inAir = true
-
-	-- collision
-	local box = {
-		x = self.x - 48,
-		y = self.y - 12,
-		w = 96, h = 12 + 48
-	}
-	self.box = box -- debug
+		--self.dy = bool[isDown "down"] - bool[isDown "up"]
+		self.dy = self.dy + 0.5
+		self.y = self.y + self.dy
 
 
-	for _, s in ipairs(solids) do
-		local ox, oy = collision(box, s)
-		self.x = self.x + ox
-		self.y = self.y + oy
 
+		-- collision box
+		local box = {
+			x = self.x - 42,
+			y = self.y - 12,
+			w = 42 * 2,
+			h = 12 + 48
+		}
+		self.box = box -- debug
 
-		if oy < 0 and self.dy > 0 then -- hit floor
-			self.dy = 0
-			inAir = false
+		-- collision
+		local state = "air"
+		for _, s in ipairs(solids) do
+			local ox, oy = collision(box, s)
+			self.x = self.x + ox
+			self.y = self.y + oy
+
+			if oy < 0 and self.dy > 0 then -- hit floor
+				self.dy = 0
+				state = "ground"
+			end
+
+			if oy > 0 and self.dy < 0 then -- ceiling cat :)
+				self.dy = 0
+			end
+
+			-- hang
+			if self.dy > 0 and self.state == "air" and ox ~= 0 then
+				_, dy = collision(box, s, "y")
+				if dy < -70 and dy > -85 then
+					self.y = self.y + dy + 84
+					self.x = self.x + self.dir * 6
+					self.state = "hang"
+					self.frame = 0
+					return
+				end
+
+			end
 		end
+		self.state = state
 
-		if oy > 0 and self.dy < 0 then -- ceiling cat :)
-			self.dy = 0
-		end
-	end
-
-	if not inAir then
 		-- jump
-		if isDown " " then
-			self.dy = -14
+		if self.state == "ground" then
+			if isDown " " then
+				self.dy = -14
+			end
+		end
+
+	elseif self.state == "hang" then
+
+		local frame = self.frame
+		self.frame = self.frame + 0.15
+		if frame < 1 and self.frame >= 1 then
+			self.x = self.x + 3 * 6 * self.dir
+			self.y = self.y - 7 * 6
+		elseif frame < 2 and self.frame >= 2 then
+			self.x = self.x + 1 * 6 * self.dir
+			self.y = self.y - 3 * 6
+		elseif frame < 3 and self.frame >= 3 then
+			self.x = self.x + 4 * 6 * self.dir
+			self.y = self.y - 4 * 6
+		elseif frame < 4 and self.frame >= 4 then
+			self.state = "ground"
 		end
 	end
+
+
+
 
 	-- animation
-	if inAir then
+	if self.state == "air" then
 		self.anim = self.anims["jump"]
 		if math.abs(self.dy) < 3 then self.frame = 1
 		elseif self.dy < 0 then
@@ -147,20 +191,23 @@ function Cat:update()
 		else
 			self.frame = 2
 		end
-	elseif dir ~= 0 then
-		self.dir = dir
-		self.anim = self.anims["run"]
-	else
-		self.anim = self.anims["idle"]
+	elseif self.state == "ground" then
+		if dir ~= 0 then
+			self.anim = self.anims["run"]
+		else
+			self.anim = self.anims["idle"]
+		end
+	elseif self.state == "hang" then
+		self.anim = self.anims["hang"]
 	end
 
 	self.frame = self.frame + self.anim.speed % #self.anim
 
-
 end
 function Cat:draw()
-	G.setColor(255, 0, 0)
-	G.rectangle("line", self.box.x, self.box.y, self.box.w, self.box.h)
+	-- debug box
+--	G.setColor(255, 0, 0)
+--	G.rectangle("line", self.box.x, self.box.y, self.box.w, self.box.h)
 
 
 	G.setColor(255, 255, 255)
@@ -182,7 +229,7 @@ function love.load()
 	player = Cat()
 
 
-	G.setBackgroundColor(100, 100, 100)
+	G.setBackgroundColor(80, 80, 110)
 end
 
 function love.update()
@@ -198,14 +245,13 @@ function love.draw()
 	G.printf("nine", 700, 200, 0, "right")
 
 
-
 	player:draw()
 
-
 	for _, s in ipairs(solids) do
+--		G.setColor(70, 50, 20)
+--		G.setLineWidth(6 * 2)
+--		G.rectangle("line", s.x, s.y, s.w, s.h)
 		G.setColor(30, 20, 0)
-		G.rectangle("line", s.x, s.y, s.w, s.h)
-		G.setColor(70, 50, 20)
 		G.rectangle("fill", s.x, s.y, s.w, s.h)
 	end
 
