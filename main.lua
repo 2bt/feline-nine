@@ -79,8 +79,8 @@ function Cat:staticInit()
 	self.quads = newQuads(96, 4, img)
 
 	self.anims = {
-		idle	= { speed=0.04, 1, 2 },
-		run		= { speed=0.10, 5, 6 },
+		idle	= { speed=2.5/60, 1, 2 },
+		run		= { speed=5/60, 5, 6 },
 		jump	= { speed=0.00, 7, 12, 8 },
 		hang	= { speed=0.00, 9, 10, 11, 12 },
 	}
@@ -244,15 +244,14 @@ function love.draw()
 	G.setColor(200, 0, 0)
 	G.printf("nine", 700, 200, 0, "right")
 
-
-	player:draw()
-
 	for _, s in ipairs(solids) do
---		G.setColor(70, 50, 20)
---		G.setLineWidth(6 * 2)
---		G.rectangle("line", s.x, s.y, s.w, s.h)
 		G.setColor(30, 20, 0)
 		G.rectangle("fill", s.x, s.y, s.w, s.h)
+		G.setColor(170, 0, 0)
+		G.setLineWidth(1)
+		G.rectangle("line", s.x, s.y, s.w, s.h)
 	end
+
+	player:draw()
 
 end
