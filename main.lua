@@ -106,7 +106,7 @@ function Cat:staticInit()
 
 end
 function Cat:init()
-	self.x = 5
+	self.x = 10
 	self.y = 20
 
 	self.dy = 0
