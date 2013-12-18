@@ -49,27 +49,46 @@ function collision(a, b, axis)
 end
 
 
-
+pixelSize = 6
 -- map
 solids = {
 	{
-		x = 0,
-		y = 470,
-		w = 800,
-		h = 200,
-	}, {
-		x = 200,
-		y = 200,
-		w = 200,
-		h = 150,
-	}, {
-		x = 550,
-		y = 300,
-		w = 100,
+		x = -100,
+		y = 78,
+		w = 233,
 		h = 100,
+	}, {
+		x = 32,
+		y = 32,
+		w = 16,
+		h = 16,
+	}, {
+		x = 48,
+		y = 32,
+		w = 16,
+		h = 16,
+	}, {
+		x = 48,
+		y = 48,
+		w = 16,
+		h = 16,
+	}, {
+		x = 95,
+		y = 50,
+		w = 16,
+		h = 16,
+	}, {
+		x = 120,
+		y = 0,
+		w = 8,
+		h = 30,
+	}, {
+		x = 120,
+		y = 32,
+		w = 8,
+		h = 34,
 	}
 }
-
 
 
 Cat = Object:new()
@@ -87,8 +106,8 @@ function Cat:staticInit()
 
 end
 function Cat:init()
-	self.x = 200
-	self.y = 500
+	self.x = 5
+	self.y = 20
 
 	self.dy = 0
 	self.dir = 1
@@ -106,20 +125,18 @@ function Cat:update()
 
 		dir = bool[isDown "right"] - bool[isDown "left"]
 		if dir ~= 0 then self.dir = dir end
-		self.x = self.x + dir * 5
+		self.x = self.x + dir * 1.1
 
 		--self.dy = bool[isDown "down"] - bool[isDown "up"]
-		self.dy = self.dy + 0.5
+		self.dy = self.dy + 0.1
 		self.y = self.y + self.dy
-
-
 
 		-- collision box
 		local box = {
-			x = self.x - 42,
-			y = self.y - 12,
-			w = 42 * 2,
-			h = 12 + 48
+			x = self.x - 7,
+			y = self.y - 3,
+			w = 14,
+			h = 11
 		}
 		self.box = box -- debug
 
@@ -142,9 +159,9 @@ function Cat:update()
 			-- hang
 			if self.dy > 0 and self.state == "air" and ox ~= 0 then
 				_, dy = collision(box, s, "y")
-				if dy < -70 and dy > -85 then
-					self.y = self.y + dy + 84
-					self.x = self.x + self.dir * 6
+				if dy < -11 and dy > -14 then
+					self.y = self.y + dy + 14
+					self.x = self.x + self.dir
 					self.state = "hang"
 					self.frame = 0
 					return
@@ -157,35 +174,32 @@ function Cat:update()
 		-- jump
 		if self.state == "ground" then
 			if isDown " " then
-				self.dy = -14
+				self.dy = -2.7
 			end
 		end
 
 	elseif self.state == "hang" then
 
 		local frame = self.frame
-		self.frame = self.frame + 0.15
+		self.frame = self.frame + 0.1
 		if frame < 1 and self.frame >= 1 then
-			self.x = self.x + 3 * 6 * self.dir
-			self.y = self.y - 7 * 6
+			self.x = self.x + 3 * self.dir
+			self.y = self.y - 7
 		elseif frame < 2 and self.frame >= 2 then
-			self.x = self.x + 1 * 6 * self.dir
-			self.y = self.y - 3 * 6
+			self.x = self.x + 1 * self.dir
+			self.y = self.y - 3
 		elseif frame < 3 and self.frame >= 3 then
-			self.x = self.x + 4 * 6 * self.dir
-			self.y = self.y - 4 * 6
+			self.x = self.x + 4 * self.dir
+			self.y = self.y - 4
 		elseif frame < 4 and self.frame >= 4 then
 			self.state = "ground"
 		end
 	end
 
-
-
-
 	-- animation
 	if self.state == "air" then
 		self.anim = self.anims["jump"]
-		if math.abs(self.dy) < 3 then self.frame = 1
+		if math.abs(self.dy) < 0.5 then self.frame = 1
 		elseif self.dy < 0 then
 			self.frame = 0
 		else
@@ -206,19 +220,19 @@ function Cat:update()
 end
 function Cat:draw()
 	-- debug box
---	G.setColor(255, 0, 0)
---	G.rectangle("line", self.box.x, self.box.y, self.box.w, self.box.h)
-
+	G.setColor(255, 0, 0)
+	G.rectangle("line", 
+		self.box.x*pixelSize, 
+		self.box.y*pixelSize, 
+		self.box.w*pixelSize, 
+		self.box.h*pixelSize)
 
 	G.setColor(255, 255, 255)
 	local i = math.floor(self.frame % #self.anim) + 1
 
 
-	G.draw(self.quads[self.anim[i]], self.x, self.y, 0, self.dir, 1)
+	G.draw(self.quads[self.anim[i]], self.x*pixelSize, self.y*pixelSize, 0, self.dir, 1)
 end
-
-
-
 
 function love.load()
 	G.setDefaultFilter("nearest", "nearest")
@@ -228,30 +242,46 @@ function love.load()
 	Cat:staticInit()
 	player = Cat()
 
-
 	G.setBackgroundColor(80, 80, 110)
 end
 
 function love.update()
-
 	player:update()
 end
 
 function love.draw()
 
+--	print("TEST")
 	G.setColor(255, 255, 255)
 	G.printf("feline", 100, 100, 0, "left")
 	G.setColor(200, 0, 0)
 	G.printf("nine", 700, 200, 0, "right")
 
+	G.setColor(30, 20, 0)
 	for _, s in ipairs(solids) do
-		G.setColor(30, 20, 0)
-		G.rectangle("fill", s.x, s.y, s.w, s.h)
-		G.setColor(170, 0, 0)
-		G.setLineWidth(1)
-		G.rectangle("line", s.x, s.y, s.w, s.h)
+		G.rectangle("fill", 
+			s.x*pixelSize, 
+			s.y*pixelSize, 
+			s.w*pixelSize, 
+			s.h*pixelSize)
+	end
+	G.setColor(170, 0, 0)
+	for _, s in ipairs(solids) do
+		G.setLineWidth(2)
+		G.rectangle("line", 
+			s.x*pixelSize, 
+			s.y*pixelSize, 
+			s.w*pixelSize, 
+			s.h*pixelSize)
 	end
 
 	player:draw()
 
+end
+
+function love.keypressed(key)
+	print(key)
+	if key == "escape" then
+		love.event.quit()
+	end
 end
