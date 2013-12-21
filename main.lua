@@ -1,5 +1,6 @@
 require "helper"
 
+
 local G = love.graphics
 local isDown = love.keyboard.isDown
 
@@ -49,45 +50,17 @@ function collision(a, b, axis)
 end
 
 
-pixelSize = 6
+PIXEL_SIZE = 6
+
 -- map
 solids = {
-	{
-		x = -100,
-		y = 78,
-		w = 233,
-		h = 100,
-	}, {
-		x = 32,
-		y = 32,
-		w = 16,
-		h = 16,
-	}, {
-		x = 48,
-		y = 32,
-		w = 16,
-		h = 16,
-	}, {
-		x = 48,
-		y = 48,
-		w = 16,
-		h = 16,
-	}, {
-		x = 95,
-		y = 50,
-		w = 16,
-		h = 16,
-	}, {
-		x = 120,
-		y = 0,
-		w = 8,
-		h = 30,
-	}, {
-		x = 120,
-		y = 32,
-		w = 8,
-		h = 34,
-	}
+	{ x = -100, y = 78, w = 233, h = 100 },
+	{ x =   32, y = 32, w =  16, h =  16 },
+	{ x =   48, y = 32, w =  16, h =  16 },
+	{ x =   48, y = 48, w =  16, h =  16 },
+	{ x =   95, y = 50, w =  16, h =  16 },
+	{ x =  120, y =  0, w =   8, h =  30 },
+	{ x =  120, y = 32, w =   8, h =  34 }
 }
 
 
@@ -221,17 +194,17 @@ end
 function Cat:draw()
 	-- debug box
 	G.setColor(255, 0, 0)
-	G.rectangle("line", 
-		self.box.x*pixelSize, 
-		self.box.y*pixelSize, 
-		self.box.w*pixelSize, 
-		self.box.h*pixelSize)
+	G.rectangle("line",
+		self.box.x*PIXEL_SIZE,
+		self.box.y*PIXEL_SIZE,
+		self.box.w*PIXEL_SIZE,
+		self.box.h*PIXEL_SIZE)
 
 	G.setColor(255, 255, 255)
 	local i = math.floor(self.frame % #self.anim) + 1
 
 
-	G.draw(self.quads[self.anim[i]], self.x*pixelSize, self.y*pixelSize, 0, self.dir, 1)
+	G.draw(self.quads[self.anim[i]], self.x*PIXEL_SIZE, self.y*PIXEL_SIZE, 0, self.dir, 1)
 end
 
 function love.load()
@@ -251,7 +224,6 @@ end
 
 function love.draw()
 
---	print("TEST")
 	G.setColor(255, 255, 255)
 	G.printf("feline", 100, 100, 0, "left")
 	G.setColor(200, 0, 0)
@@ -259,20 +231,20 @@ function love.draw()
 
 	G.setColor(30, 20, 0)
 	for _, s in ipairs(solids) do
-		G.rectangle("fill", 
-			s.x*pixelSize, 
-			s.y*pixelSize, 
-			s.w*pixelSize, 
-			s.h*pixelSize)
+		G.rectangle("fill",
+			s.x * PIXEL_SIZE,
+			s.y * PIXEL_SIZE,
+			s.w * PIXEL_SIZE,
+			s.h * PIXEL_SIZE)
 	end
 	G.setColor(170, 0, 0)
 	for _, s in ipairs(solids) do
 		G.setLineWidth(2)
-		G.rectangle("line", 
-			s.x*pixelSize, 
-			s.y*pixelSize, 
-			s.w*pixelSize, 
-			s.h*pixelSize)
+		G.rectangle("line",
+			s.x * PIXEL_SIZE,
+			s.y * PIXEL_SIZE,
+			s.w * PIXEL_SIZE,
+			s.h * PIXEL_SIZE)
 	end
 
 	player:draw()
