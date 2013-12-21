@@ -3,14 +3,14 @@ Cat = Object:new()
 function Cat:staticInit()
 
 	local img = G.newImage("data/cat.png")
-	self.quads = newQuads(96, 4, img)
+	self.quads = newQuads(96, 8, img)
 
 	self.anims = {
 		idle	= { speed=150/60/60, 1, 2 },
-		run		= { speed=5/60, 5, 6 },
-		jump	= { speed=0.00, 7, 12, 8 },
-		hang	= { speed=0.10, 9, 10 },
-		climb	= { speed=0.00, 9, 10, 11, 12 },
+		walk	= { speed=5/60, 9, 10 },
+		jump	= { speed=0.00, 17, 18, 19 },
+		hang	= { speed=150/60/60, 25, 26 },
+		climb	= { speed=0.00, 26, 27, 28, 29 },
 	}
 
 end
@@ -26,9 +26,7 @@ function Cat:init()
 	self.anim = self.anims["fall"]
 	self.frame = 0
 
-	self.walkXSpeed = 1.1
-	self.fallXSpeed = 1.1
-
+	self.walkXSpeed = 0.9
 end
 
 function Cat:update1()
@@ -44,7 +42,7 @@ function Cat:update1()
 
 	elseif self.state == walk then
 
-	elseif self.stare == run then
+	elseif self.stare == walk then
 
 	elseif self.state == crawl then
 
@@ -109,8 +107,6 @@ function Cat:update()
 					w = 14,
 					h = 2
 				}
-				self.box2 = box -- debug
-
 				for _, s in ipairs(solids) do
 					local fx, fy = collision(box, s)
 					if fx ~= 0 or fy ~= 0 then
@@ -120,6 +116,23 @@ function Cat:update()
 				end
 
 				if free then
+
+					-- is this edge climbable?
+					local box = {
+						x = self.x - 7 + self.dir * 3,
+						y = self.y - 3 + dy,
+						w = 14,
+						h = 11
+					}
+					self.climb = true
+					for _, s in ipairs(solids) do
+						local fx, fy = collision(box, s)
+						if fx ~= 0 or fy ~= 0 then
+							self.climb = false
+							break
+						end
+					end
+
 					self.y = self.y + dy + 14
 					self.x = self.x + self.dir
 					self.dy = 0
@@ -187,13 +200,8 @@ function Cat:update()
 		if isDown("down")
 		or isDown(self.dir == 1 and "left" or "right") then
 			self.state = "air"
-		elseif isDown("up") then
 
-
-			local free = true
-
-
-
+		elseif self.climb and isDown("up") then
 			self.state = "climb"
 			self.frame = 0.7
 		end
@@ -228,7 +236,7 @@ function Cat:update()
 		end
 	elseif self.state == "ground" then
 		if dir ~= 0 then
-			self.anim = self.anims["run"]
+			self.anim = self.anims["walk"]
 		else
 			self.anim = self.anims["idle"]
 		end
