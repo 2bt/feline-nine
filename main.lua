@@ -1,8 +1,13 @@
 require "helper"
+require "cat"
+
+G = love.graphics
+isDown = love.keyboard.isDown
 
 
-local G = love.graphics
-local isDown = love.keyboard.isDown
+PIXEL_SIZE = 6
+
+
 
 function newQuads(s, n, img)
 	local q = {}
@@ -49,8 +54,14 @@ function collision(a, b, axis)
 	end
 end
 
+function drawBox(box)
+	G.rectangle("line",
+		box.x * PIXEL_SIZE,
+		box.y * PIXEL_SIZE,
+		box.w * PIXEL_SIZE,
+		box.h * PIXEL_SIZE)
+end
 
-PIXEL_SIZE = 6
 
 -- map
 solids = {
@@ -64,148 +75,6 @@ solids = {
 }
 
 
-Cat = Object:new()
-function Cat:staticInit()
-
-	local img = G.newImage("data/cat.png")
-	self.quads = newQuads(96, 4, img)
-
-	self.anims = {
-		idle	= { speed=2.5/60, 1, 2 },
-		run		= { speed=5/60, 5, 6 },
-		jump	= { speed=0.00, 7, 12, 8 },
-		hang	= { speed=0.00, 9, 10, 11, 12 },
-	}
-
-end
-function Cat:init()
-	self.x = 10
-	self.y = 20
-
-	self.dy = 0
-	self.dir = 1
-
-	self.state = "air"
-	self.anim = self.anims["jump"]
-	self.frame = 0
-end
-
-function Cat:update()
-
-	local dir = 0
-	if self.state == "ground"
-	or self.state == "air" then
-
-		dir = bool[isDown "right"] - bool[isDown "left"]
-		if dir ~= 0 then self.dir = dir end
-		self.x = self.x + dir * 1.1
-
-		--self.dy = bool[isDown "down"] - bool[isDown "up"]
-		self.dy = self.dy + 0.1
-		self.y = self.y + self.dy
-
-		-- collision box
-		local box = {
-			x = self.x - 7,
-			y = self.y - 3,
-			w = 14,
-			h = 11
-		}
-		self.box = box -- debug
-
-		-- collision
-		local state = "air"
-		for _, s in ipairs(solids) do
-			local ox, oy = collision(box, s)
-			self.x = self.x + ox
-			self.y = self.y + oy
-
-			if oy < 0 and self.dy > 0 then -- hit floor
-				self.dy = 0
-				state = "ground"
-			end
-
-			if oy > 0 and self.dy < 0 then -- ceiling cat :)
-				self.dy = 0
-			end
-
-			-- hang
-			if self.dy > 0 and self.state == "air" and ox ~= 0 then
-				_, dy = collision(box, s, "y")
-				if dy < -11 and dy > -14 then
-					self.y = self.y + dy + 14
-					self.x = self.x + self.dir
-					self.state = "hang"
-					self.frame = 0
-					return
-				end
-
-			end
-		end
-		self.state = state
-
-		-- jump
-		if self.state == "ground" then
-			if isDown " " then
-				self.dy = -2.7
-			end
-		end
-
-	elseif self.state == "hang" then
-
-		local frame = self.frame
-		self.frame = self.frame + 0.1
-		if frame < 1 and self.frame >= 1 then
-			self.x = self.x + 3 * self.dir
-			self.y = self.y - 7
-		elseif frame < 2 and self.frame >= 2 then
-			self.x = self.x + 1 * self.dir
-			self.y = self.y - 3
-		elseif frame < 3 and self.frame >= 3 then
-			self.x = self.x + 4 * self.dir
-			self.y = self.y - 4
-		elseif frame < 4 and self.frame >= 4 then
-			self.state = "ground"
-		end
-	end
-
-	-- animation
-	if self.state == "air" then
-		self.anim = self.anims["jump"]
-		if math.abs(self.dy) < 0.5 then self.frame = 1
-		elseif self.dy < 0 then
-			self.frame = 0
-		else
-			self.frame = 2
-		end
-	elseif self.state == "ground" then
-		if dir ~= 0 then
-			self.anim = self.anims["run"]
-		else
-			self.anim = self.anims["idle"]
-		end
-	elseif self.state == "hang" then
-		self.anim = self.anims["hang"]
-	end
-
-	self.frame = self.frame + self.anim.speed % #self.anim
-
-end
-function Cat:draw()
-	-- debug box
-	G.setColor(255, 0, 0)
-	G.rectangle("line",
-		self.box.x*PIXEL_SIZE,
-		self.box.y*PIXEL_SIZE,
-		self.box.w*PIXEL_SIZE,
-		self.box.h*PIXEL_SIZE)
-
-	G.setColor(255, 255, 255)
-	local i = math.floor(self.frame % #self.anim) + 1
-
-
-	G.draw(self.quads[self.anim[i]], self.x*PIXEL_SIZE, self.y*PIXEL_SIZE, 0, self.dir, 1)
-end
 
 function love.load()
 	G.setDefaultFilter("nearest", "nearest")
@@ -222,6 +91,8 @@ function love.update()
 	player:update()
 end
 
+
+
 function love.draw()
 
 	G.setColor(255, 255, 255)
@@ -231,6 +102,7 @@ function love.draw()
 
 	G.setColor(30, 20, 0)
 	for _, s in ipairs(solids) do
+		drawBox(s)
 		G.rectangle("fill",
 			s.x * PIXEL_SIZE,
 			s.y * PIXEL_SIZE,
@@ -240,19 +112,15 @@ function love.draw()
 	G.setColor(170, 0, 0)
 	for _, s in ipairs(solids) do
 		G.setLineWidth(2)
-		G.rectangle("line",
-			s.x * PIXEL_SIZE,
-			s.y * PIXEL_SIZE,
-			s.w * PIXEL_SIZE,
-			s.h * PIXEL_SIZE)
+		drawBox(s)
 	end
 
 	player:draw()
 
+
 end
 
 function love.keypressed(key)
-	print(key)
 	if key == "escape" then
 		love.event.quit()
 	end
