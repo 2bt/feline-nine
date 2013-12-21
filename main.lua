@@ -9,13 +9,26 @@ PIXEL_SIZE = 6
 
 
 -- map
+platform = {
+	dynamic = true,
+	xx = 5,
+	yy = 32,
+
+	dx = 0,
+	dy = 0,
+	x = 0,
+	y = 0,
+	w = 20,
+	h = 2
+}
 
 solids = {
+	platform,
 	{ x = -100, y = 78, w = 233, h = 100 },
-	{ x =   32, y = 32, w =  16, h =  16 },
+--	{ x =   32, y = 32, w =  16, h =  16 },
 	{ x =   48, y = 32, w =  16, h =  16 },
 	{ x =   48, y = 48, w =  16, h =  16 },
-	{ x =   95, y = 52, w =  16, h =  16 },
+	{ x =   95, y = 52, w =  4, h =  16 },
 	{ x =  120, y =  0, w =   8, h =  30 },
 	{ x =  120, y = 32, w =   8, h =  34 }
 }
@@ -93,7 +106,21 @@ function love.load()
 	G.setBackgroundColor(80, 80, 110)
 end
 
+
+local tick = 0
 function love.update()
+
+
+	-- test
+	local x = platform.x
+	local y = platform.y
+	platform.x = platform.xx + math.sin(tick) * 4
+	platform.y = platform.yy + math.cos(tick) * 20
+	tick = tick + 0.01
+	platform.dx = platform.x - x
+	platform.dy = platform.y - y
+
+
 	player:update()
 end
 
@@ -118,7 +145,7 @@ function love.draw()
 	G.setColor(170, 0, 0)
 	for _, s in ipairs(solids) do
 		G.setLineWidth(2)
-		drawBox(s)
+--		drawBox(s)
 	end
 
 	player:draw()

@@ -17,7 +17,7 @@ end
 
 function Cat:init()
 	self.x = 10
-	self.y = 20
+	self.y = 60
 
 	self.dy = 0
 	self.dir = 1
@@ -26,7 +26,6 @@ function Cat:init()
 	self.anim = self.anims["fall"]
 	self.frame = 0
 
-	self.walkXSpeed = 0.9
 end
 
 function Cat:update1()
@@ -59,15 +58,22 @@ end
 
 function Cat:update()
 
+	if self.platform then
+		self.y = self.y + self.platform.dy
+		self.x = self.x + self.platform.dx
+	end
+
+
+	local jump = isDown " "
+
 	local dir = 0
 	if self.state == "ground"
 	or self.state == "air" then
 
-
 		-- horizontal movement
 		dir = bool[isDown "right"] - bool[isDown "left"]
 		if dir ~= 0 then self.dir = dir end
-		self.x = self.x + dir * self.walkXSpeed
+		self.x = self.x + dir * 0.9
 
 		local box = {
 			x = self.x - 7,
@@ -138,6 +144,9 @@ function Cat:update()
 					self.dy = 0
 					self.state = "hang"
 					self.frame = 0
+					if edgeBox.dynamic then
+						self.platform = edgeBox
+					end
 					return -- this might break things
 				end
 			end
@@ -157,7 +166,9 @@ function Cat:update()
 			h = 11
 		}
 
+		local floorBox = nil
 		local oy = 0
+
 		for _, s in ipairs(solids) do
 			local y1, y2 = collision(box, s, "y")
 			local py = 0
@@ -168,6 +179,7 @@ function Cat:update()
 			end
 			if math.abs(py) > math.abs(oy) then
 				oy = py
+				floorBox = s
 			end
 		end
 
@@ -177,8 +189,12 @@ function Cat:update()
 		if oy < 0 and self.dy > 0 then -- hit floor
 			self.dy = 0
 			self.state = "ground"
+			if floorBox.dynamic then
+				self.platform = floorBox
+			end
 		else
 			self.state = "air"
+			self.platform = nil
 		end
 
 		if oy > 0 and self.dy < 0 then -- ceiling cat :)
@@ -189,7 +205,7 @@ function Cat:update()
 
 		-- jump
 		if self.state == "ground" then
-			if isDown " " then
+			if jump and not self.lastJump then
 				self.dy = -2.7
 			end
 		end
@@ -197,11 +213,11 @@ function Cat:update()
 		self.box = box
 
 	elseif self.state == "hang" then
-		if isDown("down")
+		if isDown "down"
 		or isDown(self.dir == 1 and "left" or "right") then
 			self.state = "air"
 
-		elseif self.climb and isDown("up") then
+		elseif self.climb and isDown "up" then
 			self.state = "climb"
 			self.frame = 0.7
 		end
@@ -223,6 +239,11 @@ function Cat:update()
 			self.state = "ground"
 		end
 	end
+
+
+	self.lastJump = jump
+
+
 
 	-- animation
 	if self.state == "air" then
@@ -252,10 +273,8 @@ end
 function Cat:draw()
 	-- debug box
 	G.setColor(255, 0, 0)
-	drawBox(self.box)
-	if self.box2 then
-		drawBox(self.box2)
-	end
+--	drawBox(self.box)
+--	if self.box2 then drawBox(self.box2) end
 
 	G.setColor(255, 255, 255)
 	local i = math.floor(self.frame % #self.anim) + 1
