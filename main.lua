@@ -6,6 +6,7 @@ isDown = love.keyboard.isDown
 
 
 PIXEL_SIZE = 6
+MUSIC_BPM = 150
 
 
 -- map
@@ -96,6 +97,9 @@ end
 -- the real stuff
 
 function love.load()
+	music_001 = love.audio.newSource("data/feline_001.ogg", "stream")
+	music_001:setLooping(true)
+
 	G.setDefaultFilter("nearest", "nearest")
 	font = G.newFont("data/grumpy-cat.ttf", 100)
 	G.setFont(font)
@@ -109,7 +113,9 @@ end
 
 local tick = 0
 function love.update()
-
+	if not music_001:isPlaying() then
+		music_001:play()
+	end
 
 	-- test
 	local x = platform.x
@@ -119,7 +125,6 @@ function love.update()
 	tick = tick + 0.01
 	platform.dx = platform.x - x
 	platform.dy = platform.y - y
-
 
 	player:update()
 end
@@ -149,7 +154,6 @@ function love.draw()
 	end
 
 	player:draw()
-
 
 end
 

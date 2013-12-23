@@ -1,16 +1,20 @@
 Cat = Object:new()
 
+-- this controls the beat counter reset
+-- keep as low as possible to avoid float rounding errors
+local MUSIC_TIMER_RING_SIZE = 4
+
 function Cat:staticInit()
 
 	local img = G.newImage("data/cat.png")
 	self.quads = newQuads(96, 8, img)
 
 	self.anims = {
-		idle	= { speed=150/60/60, 1, 2 },
+		idle	= { speed=1.00, 1, 2, 3, 4, boundToMusic=true },
 		walk	= { speed=5/60, 9, 10 },
 		jump	= { speed=0.00, 17, 18, 19 },
-		hang	= { speed=150/60/60, 25, 26 },
-		climb	= { speed=0.00, 26, 27, 28, 29 },
+		hang	= { speed=1.00, 25, 26, 27, 28, boundToMusic=true },
+		climb	= { speed=0.00, 28, 29, 30, 31 },
 	}
 
 end
@@ -26,6 +30,11 @@ function Cat:init()
 	self.anim = self.anims["fall"]
 	self.frame = 0
 
+	self:musicUpdated()
+end
+
+function Cat:musicUpdated()
+	self.idleAnimationCounter = 0
 end
 
 function Cat:update1()
@@ -57,7 +66,8 @@ end
 
 
 function Cat:update()
-
+	self.idleAnimationCounter = (self.idleAnimationCounter + love.timer.getDelta() * MUSIC_BPM / 60) % MUSIC_TIMER_RING_SIZE
+	
 	if self.platform then
 		self.y = self.y + self.platform.dy
 		self.x = self.x + self.platform.dx
@@ -270,6 +280,7 @@ function Cat:update()
 	self.frame = self.frame + self.anim.speed % #self.anim
 
 end
+
 function Cat:draw()
 	-- debug box
 	G.setColor(255, 0, 0)
@@ -277,7 +288,10 @@ function Cat:draw()
 --	if self.box2 then drawBox(self.box2) end
 
 	G.setColor(255, 255, 255)
-	local i = math.floor(self.frame % #self.anim) + 1
+	local i = math.floor(self.frame) % #self.anim + 1
+	if self.anim.boundToMusic then
+		i = math.floor(self.idleAnimationCounter * self.anim.speed) % #self.anim + 1
+	end
 
 	G.draw(self.quads[self.anim[i]], self.x*PIXEL_SIZE, self.y*PIXEL_SIZE, 0, self.dir, 1)
 end
