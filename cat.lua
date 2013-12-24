@@ -4,16 +4,18 @@ Cat = Object:new()
 -- keep as low as possible to avoid float rounding errors
 local MUSIC_TIMER_RING_SIZE = 4
 
+local DRAW_DEBUG_BOXES = true
+
 function Cat:staticInit()
 
 	local img = G.newImage("data/cat.png")
 	self.quads = newQuads(96, 8, img)
 
 	self.anims = {
-		idle	= { speed=1.00, 1, 2, 3, 4, boundToMusic=true },
-		walk	= { speed=5/60, 9, 10 },
+		idle	= { speed=1.00, 1, 2, 3, 4 },
+		walk	= { speed=0.20, 9, 10, 11, 12, 13, 14, 15, 16 },
 		jump	= { speed=0.00, 17, 18, 19 },
-		hang	= { speed=1.00, 25, 26, 27, 28, boundToMusic=true },
+		hang	= { speed=1.00, 25, 26, 27, 28 },
 		climb	= { speed=0.00, 28, 29, 30, 31 },
 	}
 
@@ -30,6 +32,7 @@ function Cat:init()
 	self.anim = self.anims["fall"]
 	self.frame = 0
 
+	self.lastIdleX = self.x
 	self:musicUpdated()
 end
 
@@ -37,42 +40,18 @@ function Cat:musicUpdated()
 	self.idleAnimationCounter = 0
 end
 
-function Cat:update1()
-	local moveX = bool[isDown "right"] - bool[isDown "left"]
-	if moveX ~= 0 then self.dir = moveX end
-	local spacePressed = bool[isDown "space"]
-	local upPressed = bool[isDown "up"]
-	local downPressed = bool[isDown "down"]
-
-	if self.state == fall then
-
-	elseif self.state == stand then
-
-	elseif self.state == walk then
-
-	elseif self.stare == walk then
-
-	elseif self.state == crawl then
-
-	elseif self.state == hang then
-
-	elseif state == climb then
-
-	else
-		-- unknown state, what to do here?
-	end
-	-- ...
-end
-
-
-function Cat:update()
-	self.idleAnimationCounter = (self.idleAnimationCounter + love.timer.getDelta() * MUSIC_BPM / 60) % MUSIC_TIMER_RING_SIZE
+-- suggestion: separate Cat:update(justTime) into Cat:updateTime() and Cat:updateMovement(leftBttn, rightBttn, upBttn, downBttn, jumpBttn)
+		--> update time only when no movement is happening, keeping head bobbing synced to music
+		--> movement with button strings as parameters enables multi player
+function Cat:update(justTime)
+	local time = love.timer.getDelta()
+	self.idleAnimationCounter = (self.idleAnimationCounter + time * MUSIC_BPM / 60) % MUSIC_TIMER_RING_SIZE
+	if justTime then return end
 	
 	if self.platform then
 		self.y = self.y + self.platform.dy
 		self.x = self.x + self.platform.dx
 	end
-
 
 	local jump = isDown " "
 
@@ -270,6 +249,7 @@ function Cat:update()
 			self.anim = self.anims["walk"]
 		else
 			self.anim = self.anims["idle"]
+			self.lastIdleX = self.x
 		end
 	elseif self.state == "hang" then
 		self.anim = self.anims["hang"]
@@ -282,14 +262,15 @@ function Cat:update()
 end
 
 function Cat:draw()
-	-- debug box
-	G.setColor(255, 0, 0)
---	drawBox(self.box)
---	if self.box2 then drawBox(self.box2) end
+	if DRAW_DEBUG_BOXES then
+		G.setColor(255, 0, 0)
+		drawBox(self.box)
+		if self.box2 then drawBox(self.box2) end
+	end
 
 	G.setColor(255, 255, 255)
 	local i = math.floor(self.frame) % #self.anim + 1
-	if self.anim.boundToMusic then
+	if self.anim == self.anims.idle or self.anim == self.anims.hang then
 		i = math.floor(self.idleAnimationCounter * self.anim.speed) % #self.anim + 1
 	end
 

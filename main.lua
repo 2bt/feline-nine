@@ -25,11 +25,13 @@ platform = {
 
 solids = {
 	platform,
-	{ x = -100, y = 78, w = 233, h = 100 },
+	{ x = - 40, y =  0, w =  20, h = 100 },
+	{ x =  153, y =  0, w =  20, h = 100 },
+	{ x = -100, y = 78, w = 333, h = 100 },
 --	{ x =   32, y = 32, w =  16, h =  16 },
 	{ x =   48, y = 32, w =  16, h =  16 },
 	{ x =   48, y = 48, w =  16, h =  16 },
-	{ x =   95, y = 52, w =  4, h =  16 },
+	{ x =   95, y = 52, w =   4, h =  16 },
 	{ x =  120, y =  0, w =   8, h =  30 },
 	{ x =  120, y = 32, w =   8, h =  34 }
 }
@@ -114,7 +116,7 @@ end
 local tick = 0
 function love.update()
 	if not music_001:isPlaying() then
-		music_001:play()
+--		music_001:play()
 	end
 
 	-- test
